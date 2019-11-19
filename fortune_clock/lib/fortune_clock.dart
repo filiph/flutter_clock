@@ -200,6 +200,11 @@ class _FortuneClockState extends State<FortuneClock> {
     setState(() {
       _lines.insert(0, _TypingTween._formatEndText(line, isUserInput, false));
     });
+    if (_lines.length > 10000) {
+      // Prevent memory leak. But still provide a huge amount of history
+      // (6 days) for those running the clock a long time.
+      _lines.removeRange(9000, _lines.length);
+    }
   }
 
   Future<void> _updateFortune() async {
