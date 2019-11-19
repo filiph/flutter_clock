@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_clock_helper/model.dart';
+import 'package:fortune_clock/src/fortunes.dart';
 
 const String cursor = '█';
 
@@ -71,6 +73,8 @@ enum _Element {
 class _FortuneClockState extends State<FortuneClock> {
   Timer _timer;
 
+  Timer _fortuneTimer;
+
   _ActiveLine _activeLine;
 
   final List<String> _lines = [];
@@ -80,29 +84,25 @@ class _FortuneClockState extends State<FortuneClock> {
     final colors = Theme.of(context).brightness == Brightness.light
         ? _lightTheme
         : _darkTheme;
-    final fontSize = MediaQuery.of(context).size.width / 40;
+    final fontSize = MediaQuery.of(context).size.width / 50;
     final defaultStyle = TextStyle(
       color: colors[_Element.text],
-      fontFamily: 'PressStart2P',
+      fontFamily: 'Source Code Pro',
       fontSize: fontSize,
     );
 
     return Container(
       color: colors[_Element.background],
-      child: Center(
-        child: DefaultTextStyle(
-          style: defaultStyle,
-          child: ListView(
-            reverse: true,
-            children: <Widget>[
-              SizedBox(height: fontSize * 10),
-              if (_activeLine != null)
-                _activeLine
-              else
-                const Text('\$ $cursor'),
-              for (final line in _lines) Text(line),
-            ],
-          ),
+      child: DefaultTextStyle(
+        style: defaultStyle,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          reverse: true,
+          children: <Widget>[
+            SizedBox(height: fontSize * 10),
+            if (_activeLine != null) _activeLine else const Text('\$ $cursor'),
+            for (final line in _lines) Text(line),
+          ],
         ),
       ),
     );
@@ -120,6 +120,7 @@ class _FortuneClockState extends State<FortuneClock> {
   @override
   void dispose() {
     _timer?.cancel();
+    _fortuneTimer?.cancel();
     widget.model.removeListener(_updateModel);
     widget.model.dispose();
     super.dispose();
@@ -172,6 +173,7 @@ class _FortuneClockState extends State<FortuneClock> {
   }
 
   Future<void> _print(String line, {bool isUserInput = false}) async {
+    if (!mounted) return;
     assert(_activeLine == null);
     final completer = Completer<void>();
     setState(() {
@@ -183,7 +185,10 @@ class _FortuneClockState extends State<FortuneClock> {
       );
     });
     await completer.future;
-    await Future.delayed(const Duration(milliseconds: 500));
+    if (isUserInput) {
+      // The delay between hitting enter.
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
     _activeLine = null;
     setState(() {
       _lines.insert(0, _TypingTween._formatEndText(line, isUserInput, false));
@@ -202,14 +207,38 @@ class _FortuneClockState extends State<FortuneClock> {
     await _print('date', isUserInput: true);
     await _print(_formatDate(dateTime));
 
+    if (!mounted) return;
+
     // Update once per minute.
     dateTime = DateTime.now();
-    _timer = Timer(
-      Duration(minutes: 1) -
+    final delayBeforeNextTime = Duration(minutes: 1) -
+        Duration(seconds: dateTime.second) -
+        Duration(milliseconds: dateTime.millisecond);
+    _timer = Timer(delayBeforeNextTime, _updateTime);
+
+    if (delayBeforeNextTime > const Duration(seconds: 30)) {
+      // Print a fortune cookie at the half-minute mark.
+      final delayBeforeNextFortune = const Duration(seconds: 30) -
           Duration(seconds: dateTime.second) -
-          Duration(milliseconds: dateTime.millisecond),
-      _updateTime,
-    );
+          Duration(milliseconds: dateTime.millisecond);
+      _fortuneTimer = Timer(delayBeforeNextFortune, _updateFortune);
+    }
+  }
+
+  static final _random = Random();
+
+  Future<void> _updateFortune() async {
+    if (!mounted) return;
+    final fortunes = await loadFortunes();
+
+    if (!mounted) return;
+    await _print('fortune', isUserInput: true);
+
+    final fortune = fortunes[_random.nextInt(fortunes.length)];
+    for (final line in fortune.lines) {
+      if (!mounted) return;
+      await _print(line);
+    }
   }
 }
 

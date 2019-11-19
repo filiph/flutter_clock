@@ -19,3 +19,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fortunes/
+
+  fonts:
+    - family: Source Code Pro
+      fonts:
+        - asset: assets/fonts/Source_Code_Pro/SourceCodePro-Regular.ttf
