@@ -12,13 +12,14 @@ import 'package:fortune_clock/src/fortunes.dart';
 const String cursor = '█';
 
 const _darkTheme = {
-  _Element.background: Color(0xFF111111),
-  _Element.text: Color(0xFFEEEEEE),
+  _Element.background: Color(0xFF000000),
+  _Element.text: Color(0xFFC7C7C7),
 };
 
+/// Inspired by 'Solarized Light' theme.
 const _lightTheme = {
-  _Element.background: Color(0xFFEEEEEE),
-  _Element.text: Color(0xFF666666),
+  _Element.background: Color(0xFFfdf6e3),
+  _Element.text: Color(0xFF657b83),
 };
 
 /// A basic digital clock.
@@ -71,6 +72,8 @@ enum _Element {
 }
 
 class _FortuneClockState extends State<FortuneClock> {
+  static final _random = Random();
+
   Timer _timer;
 
   Timer _fortuneTimer;
@@ -132,6 +135,8 @@ class _FortuneClockState extends State<FortuneClock> {
     widget.model.addListener(_updateModel);
     _updateTime();
     _updateModel();
+    // Cache fortunes.
+    loadFortunes();
   }
 
   /// Formats date according to the Unix `date` command's default configuration.
@@ -197,6 +202,28 @@ class _FortuneClockState extends State<FortuneClock> {
     });
   }
 
+  Future<void> _updateFortune() async {
+    if (!mounted) return;
+    final fortunes = await loadFortunes();
+
+    if (!mounted) return;
+    await _print('fortune', isUserInput: true);
+
+    final fortune = fortunes[_random.nextInt(fortunes.length)];
+    for (final line in fortune.lines) {
+      if (!mounted) return;
+      await _print(line);
+    }
+
+    // Schedule time.
+    if (!mounted) return;
+    var dateTime = DateTime.now();
+    final delayBeforeNextTime = Duration(minutes: 1) -
+        Duration(seconds: dateTime.second) -
+        Duration(milliseconds: dateTime.millisecond);
+    _timer = Timer(delayBeforeNextTime, _updateTime);
+  }
+
   void _updateModel() {
     setState(() {
       // Cause the clock to rebuild when the model changes.
@@ -218,8 +245,8 @@ class _FortuneClockState extends State<FortuneClock> {
         Duration(milliseconds: dateTime.millisecond);
 
     const timeForFortune = const Duration(seconds: 55);
-    if (delayBeforeNextTime > timeForFortune) {
-      // Print a fortune cookie at the half-minute mark.
+    if (delayBeforeNextTime > const Duration(seconds: 30)) {
+      // Print a fortune cookie before the next minute mark.
       final delayBeforeNextFortune = timeForFortune -
           Duration(seconds: dateTime.second) -
           Duration(milliseconds: dateTime.millisecond);
@@ -227,30 +254,6 @@ class _FortuneClockState extends State<FortuneClock> {
     } else {
       _timer = Timer(delayBeforeNextTime, _updateTime);
     }
-  }
-
-  static final _random = Random();
-
-  Future<void> _updateFortune() async {
-    if (!mounted) return;
-    final fortunes = await loadFortunes();
-
-    if (!mounted) return;
-    await _print('fortune', isUserInput: true);
-
-    final fortune = fortunes[_random.nextInt(fortunes.length)];
-    for (final line in fortune.lines) {
-      if (!mounted) return;
-      await _print(line);
-    }
-
-    // Schedule time.
-    if (!mounted) return;
-    var dateTime = DateTime.now();
-    final delayBeforeNextTime = Duration(minutes: 1) -
-        Duration(seconds: dateTime.second) -
-        Duration(milliseconds: dateTime.millisecond);
-    _timer = Timer(delayBeforeNextTime, _updateTime);
   }
 }
 
