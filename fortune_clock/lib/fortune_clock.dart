@@ -87,7 +87,7 @@ class _FortuneClockState extends State<FortuneClock> {
     final colors = Theme.of(context).brightness == Brightness.light
         ? _lightTheme
         : _darkTheme;
-    final fontSize = MediaQuery.of(context).size.width / 50;
+    final fontSize = MediaQuery.of(context).size.width / 52;
     final defaultStyle = TextStyle(
       color: colors[_Element.text],
       fontFamily: 'Source Code Pro',
