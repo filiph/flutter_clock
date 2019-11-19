@@ -160,6 +160,8 @@ class _FortuneClockState extends State<FortuneClock> {
     ];
     buf.write(months[time.month - 1]);
     buf.write(' ');
+    buf.write(time.day);
+    buf.write(' ');
     buf.write(time.hour);
     buf.write(':');
     buf.write(time.minute.toString().padLeft(2, '0'));
