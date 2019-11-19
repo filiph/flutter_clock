@@ -32,7 +32,7 @@ class FortuneClock extends StatefulWidget {
 }
 
 class _ActiveLine extends StatelessWidget {
-  static const humanTypeSpeed = Duration(milliseconds: 350);
+  static const humanTypeSpeed = Duration(milliseconds: 150);
 
   static const terminalTypeSpeed = Duration(milliseconds: 10);
 
