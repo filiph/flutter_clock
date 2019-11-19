@@ -216,14 +216,16 @@ class _FortuneClockState extends State<FortuneClock> {
     final delayBeforeNextTime = Duration(minutes: 1) -
         Duration(seconds: dateTime.second) -
         Duration(milliseconds: dateTime.millisecond);
-    _timer = Timer(delayBeforeNextTime, _updateTime);
 
-    if (delayBeforeNextTime > const Duration(seconds: 30)) {
+    const timeForFortune = const Duration(seconds: 55);
+    if (delayBeforeNextTime > timeForFortune) {
       // Print a fortune cookie at the half-minute mark.
-      final delayBeforeNextFortune = const Duration(seconds: 30) -
+      final delayBeforeNextFortune = timeForFortune -
           Duration(seconds: dateTime.second) -
           Duration(milliseconds: dateTime.millisecond);
       _fortuneTimer = Timer(delayBeforeNextFortune, _updateFortune);
+    } else {
+      _timer = Timer(delayBeforeNextTime, _updateTime);
     }
   }
 
@@ -241,6 +243,14 @@ class _FortuneClockState extends State<FortuneClock> {
       if (!mounted) return;
       await _print(line);
     }
+
+    // Schedule time.
+    if (!mounted) return;
+    var dateTime = DateTime.now();
+    final delayBeforeNextTime = Duration(minutes: 1) -
+        Duration(seconds: dateTime.second) -
+        Duration(milliseconds: dateTime.millisecond);
+    _timer = Timer(delayBeforeNextTime, _updateTime);
   }
 }
 
