@@ -10,7 +10,7 @@ import 'package:flutter_clock_helper/model.dart';
 const String cursor = '█';
 
 const _darkTheme = {
-  _Element.background: Color(0xFF666666),
+  _Element.background: Color(0xFF111111),
   _Element.text: Color(0xFFEEEEEE),
 };
 
@@ -96,7 +96,10 @@ class _FortuneClockState extends State<FortuneClock> {
             reverse: true,
             children: <Widget>[
               SizedBox(height: fontSize * 10),
-              if (_activeLine != null) _activeLine else Text('\$ $cursor'),
+              if (_activeLine != null)
+                _activeLine
+              else
+                const Text('\$ $cursor'),
               for (final line in _lines) Text(line),
             ],
           ),
