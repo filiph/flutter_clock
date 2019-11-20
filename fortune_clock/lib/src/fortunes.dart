@@ -10,7 +10,9 @@ Future<List<Fortune>> loadFortunes() async {
   }
 
   final assets = <Future<String>>[
+    rootBundle.loadString('assets/fortunes/computers', cache: false),
     rootBundle.loadString('assets/fortunes/fortunes', cache: false),
+    rootBundle.loadString('assets/fortunes/miscellaneous', cache: false),
     rootBundle.loadString('assets/fortunes/people', cache: false),
     rootBundle.loadString('assets/fortunes/platitudes', cache: false),
     rootBundle.loadString('assets/fortunes/wisdom', cache: false),
