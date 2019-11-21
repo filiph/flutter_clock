@@ -82,6 +82,8 @@ class _FortuneClockState extends State<FortuneClock> {
 
   final List<String> _lines = [];
 
+  DateTime _lastTimeShown;
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).brightness == Brightness.light
@@ -179,6 +181,11 @@ class _FortuneClockState extends State<FortuneClock> {
     return buf.toString();
   }
 
+  Duration _getTimeSinceLastTimeShownTo(DateTime dateTime) {
+    if (_lastTimeShown == null) return Duration(days: 0xFFFF);
+    return dateTime.difference(_lastTimeShown);
+  }
+
   Future<void> _print(String line, {bool isUserInput = false}) async {
     if (!mounted) return;
     assert(_activeLine == null);
@@ -223,6 +230,15 @@ class _FortuneClockState extends State<FortuneClock> {
     // Schedule time.
     if (!mounted) return;
     var dateTime = DateTime.now();
+
+    if (_getTimeSinceLastTimeShownTo(dateTime) >= Duration(minutes: 1)) {
+      // We've spent too much time printing (e.g. the user was not watching
+      // the printing by scrolling up, so the widget didn't update).
+      // Rerun [_updateTime()] immediately.
+      _updateTime();
+      return;
+    }
+
     final delayBeforeNextTime = Duration(minutes: 1) -
         Duration(seconds: dateTime.second) -
         Duration(milliseconds: dateTime.millisecond);
@@ -238,17 +254,28 @@ class _FortuneClockState extends State<FortuneClock> {
   Future<void> _updateTime() async {
     if (!mounted) return;
     var dateTime = DateTime.now();
+    _lastTimeShown = dateTime;
     await _print('date', isUserInput: true);
     await _print(_formatDate(dateTime));
 
     if (!mounted) return;
 
-    // Update once per minute.
+    // How long since now (after we've spent time printing stuff)
+    // until the next whole minute?
     dateTime = DateTime.now();
+    if (_getTimeSinceLastTimeShownTo(dateTime) >= Duration(minutes: 1)) {
+      // We've spent too much time printing (e.g. the user was not watching
+      // the printing by scrolling up, so the widget didn't update).
+      // Rerun [_updateTime()] immediately.
+      _updateTime();
+      return;
+    }
+
     final delayBeforeNextTime = Duration(minutes: 1) -
         Duration(seconds: dateTime.second) -
         Duration(milliseconds: dateTime.millisecond);
 
+    // The best time for fortune is 5 seconds before whole minute.
     const timeForFortune = const Duration(seconds: 55);
     if (delayBeforeNextTime > const Duration(seconds: 30)) {
       // Print a fortune cookie before the next minute mark.
