@@ -286,7 +286,7 @@ class _FortuneClockState extends State<FortuneClock> {
 
     // The best time for fortune is 5 seconds before whole minute.
     const timeForFortune = const Duration(seconds: 55);
-    if (delayBeforeNextTime > const Duration(seconds: 30)) {
+    if (delayBeforeNextTime > const Duration(seconds: 5)) {
       // Print a fortune cookie before the next minute mark.
       final delayBeforeNextFortune = timeForFortune -
           Duration(seconds: dateTime.second) -
