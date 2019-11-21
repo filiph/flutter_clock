@@ -146,10 +146,8 @@ class _FortuneClockState extends State<FortuneClock> {
   void initState() {
     super.initState();
     widget.model.addListener(_updateModel);
-    _updateTime();
     _updateModel();
-    // Cache fortunes.
-    loadFortunes();
+    _updateFortune();
   }
 
   /// Formats date according to the Unix `date` command's default configuration.
