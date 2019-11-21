@@ -80,9 +80,15 @@ class _FortuneClockState extends State<FortuneClock> {
 
   _ActiveLine _activeLine;
 
+  FocusNode _focusNode = FocusNode();
+
   final List<String> _lines = [];
 
   DateTime _lastTimeShown;
+
+  bool _currentlyPrinting = false;
+
+  bool _fortuneRequested = false;
 
   @override
   Widget build(BuildContext context) {
@@ -96,29 +102,32 @@ class _FortuneClockState extends State<FortuneClock> {
       fontSize: fontSize,
     );
 
-    return Container(
-      color: colors[_Element.background],
-      child: DefaultTextStyle(
-        style: defaultStyle,
-        child: ListView.builder(
-          padding: EdgeInsets.only(
-            top: fontSize * 2,
-            left: fontSize * 2,
-            right: fontSize * 2,
-            bottom: fontSize * 10,
-          ),
-          reverse: true,
-          itemCount: _lines.length + 1 /* for the active line */,
-          itemBuilder: (_, index) {
-            if (index == 0) {
-              if (_activeLine != null) {
-                return _activeLine;
-              } else {
-                return const Text('\$ $cursor');
+    return GestureDetector(
+      onTap: _handleKeyboardEvent,
+      child: Container(
+        color: colors[_Element.background],
+        child: DefaultTextStyle(
+          style: defaultStyle,
+          child: ListView.builder(
+            padding: EdgeInsets.only(
+              top: fontSize * 2,
+              left: fontSize * 2,
+              right: fontSize * 2,
+              bottom: fontSize * 10,
+            ),
+            reverse: true,
+            itemCount: _lines.length + 1 /* for the active line */,
+            itemBuilder: (_, index) {
+              if (index == 0) {
+                if (_activeLine != null) {
+                  return _activeLine;
+                } else {
+                  return const Text('\$ $cursor');
+                }
               }
-            }
-            return Text(_lines[index - 1]);
-          },
+              return Text(_lines[index - 1]);
+            },
+          ),
         ),
       ),
     );
@@ -147,7 +156,7 @@ class _FortuneClockState extends State<FortuneClock> {
     super.initState();
     widget.model.addListener(_updateModel);
     _updateModel();
-    _updateFortune();
+    _printFortune();
   }
 
   /// Formats date according to the Unix `date` command's default configuration.
@@ -195,6 +204,16 @@ class _FortuneClockState extends State<FortuneClock> {
     return dateTime.difference(_lastTimeShown);
   }
 
+  void _handleKeyboardEvent() {
+    if (!_currentlyPrinting) {
+      _timer?.cancel();
+      _fortuneTimer?.cancel();
+      _printFortune();
+      return;
+    }
+    _fortuneRequested = true;
+  }
+
   Future<void> _print(String line, {bool isUserInput = false}) async {
     if (!mounted) return;
     assert(_activeLine == null);
@@ -223,7 +242,9 @@ class _FortuneClockState extends State<FortuneClock> {
     }
   }
 
-  Future<void> _updateFortune() async {
+  Future<void> _printFortune() async {
+    assert(!_currentlyPrinting);
+    _currentlyPrinting = true;
     if (!mounted) return;
     final fortunes = await loadFortunes();
 
@@ -235,39 +256,49 @@ class _FortuneClockState extends State<FortuneClock> {
       if (!mounted) return;
       await _print(line);
     }
+    _currentlyPrinting = false;
+
+    if (!mounted) return;
+    if (_fortuneRequested) {
+      _fortuneRequested = false;
+      _printFortune();
+      return;
+    }
 
     // Schedule time.
-    if (!mounted) return;
     var dateTime = DateTime.now();
 
     if (_getTimeSinceLastTimeShownTo(dateTime) >= Duration(minutes: 1)) {
       // We've spent too much time printing (e.g. the user was not watching
       // the printing by scrolling up, so the widget didn't update).
       // Rerun [_updateTime()] immediately.
-      _updateTime();
+      _printTime();
       return;
     }
 
     final delayBeforeNextTime = Duration(minutes: 1) -
         Duration(seconds: dateTime.second) -
         Duration(milliseconds: dateTime.millisecond);
-    _timer = Timer(delayBeforeNextTime, _updateTime);
+    _timer = Timer(delayBeforeNextTime, _printTime);
   }
 
-  void _updateModel() {
-    setState(() {
-      // Cause the clock to rebuild when the model changes.
-    });
-  }
-
-  Future<void> _updateTime() async {
+  Future<void> _printTime() async {
+    assert(!_currentlyPrinting);
+    _currentlyPrinting = true;
     if (!mounted) return;
     var dateTime = DateTime.now();
     _lastTimeShown = dateTime;
     await _print('date', isUserInput: true);
     await _print(_formatDate(dateTime));
+    _currentlyPrinting = false;
 
     if (!mounted) return;
+
+    if (_fortuneRequested) {
+      _fortuneRequested = false;
+      _printFortune();
+      return;
+    }
 
     // How long since now (after we've spent time printing stuff)
     // until the next whole minute?
@@ -276,7 +307,7 @@ class _FortuneClockState extends State<FortuneClock> {
       // We've spent too much time printing (e.g. the user was not watching
       // the printing by scrolling up, so the widget didn't update).
       // Rerun [_updateTime()] immediately.
-      _updateTime();
+      _printTime();
       return;
     }
 
@@ -291,10 +322,16 @@ class _FortuneClockState extends State<FortuneClock> {
       final delayBeforeNextFortune = timeForFortune -
           Duration(seconds: dateTime.second) -
           Duration(milliseconds: dateTime.millisecond);
-      _fortuneTimer = Timer(delayBeforeNextFortune, _updateFortune);
+      _fortuneTimer = Timer(delayBeforeNextFortune, _printFortune);
     } else {
-      _timer = Timer(delayBeforeNextTime, _updateTime);
+      _timer = Timer(delayBeforeNextTime, _printTime);
     }
+  }
+
+  void _updateModel() {
+    setState(() {
+      // Cause the clock to rebuild when the model changes.
+    });
   }
 }
 
