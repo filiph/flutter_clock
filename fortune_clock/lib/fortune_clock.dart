@@ -100,14 +100,25 @@ class _FortuneClockState extends State<FortuneClock> {
       color: colors[_Element.background],
       child: DefaultTextStyle(
         style: defaultStyle,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: ListView.builder(
+          padding: EdgeInsets.only(
+            top: fontSize * 2,
+            left: fontSize * 2,
+            right: fontSize * 2,
+            bottom: fontSize * 10,
+          ),
           reverse: true,
-          children: <Widget>[
-            SizedBox(height: fontSize * 10),
-            if (_activeLine != null) _activeLine else const Text('\$ $cursor'),
-            for (final line in _lines) Text(line),
-          ],
+          itemCount: _lines.length + 1 /* for the active line */,
+          itemBuilder: (_, index) {
+            if (index == 0) {
+              if (_activeLine != null) {
+                return _activeLine;
+              } else {
+                return const Text('\$ $cursor');
+              }
+            }
+            return Text(_lines[index - 1]);
+          },
         ),
       ),
     );
