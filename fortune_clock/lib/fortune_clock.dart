@@ -46,10 +46,10 @@ class _ActiveLine extends StatelessWidget {
   final bool isUserInput;
 
   _ActiveLine({
-    @required this.text,
-    @required this.onDone,
+    required this.text,
+    required this.onDone,
     this.isUserInput = false,
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -59,7 +59,7 @@ class _ActiveLine extends StatelessWidget {
       onEnd: onDone,
       duration:
           (isUserInput ? humanTypeSpeed : terminalTypeSpeed) * text.length,
-      builder: (context, value, child) {
+      builder: (context, String value, child) {
         return Text(value);
       },
     );
@@ -74,17 +74,17 @@ enum _Element {
 class _FortuneClockState extends State<FortuneClock> {
   static final _random = Random();
 
-  Timer _timer;
+  Timer? _timer;
 
-  Timer _fortuneTimer;
+  Timer? _fortuneTimer;
 
-  _ActiveLine _activeLine;
+  _ActiveLine? _activeLine;
 
   FocusNode _focusNode = FocusNode();
 
   final List<String> _lines = [];
 
-  DateTime _lastTimeShown;
+  DateTime? _lastTimeShown;
 
   bool _currentlyPrinting = false;
 
@@ -120,7 +120,7 @@ class _FortuneClockState extends State<FortuneClock> {
             itemBuilder: (_, index) {
               if (index == 0) {
                 if (_activeLine != null) {
-                  return _activeLine;
+                  return _activeLine!;
                 } else {
                   return const Text('\$ $cursor');
                 }
@@ -201,7 +201,7 @@ class _FortuneClockState extends State<FortuneClock> {
 
   Duration _getTimeSinceLastTimeShownTo(DateTime dateTime) {
     if (_lastTimeShown == null) return Duration(days: 0xFFFF);
-    return dateTime.difference(_lastTimeShown);
+    return dateTime.difference(_lastTimeShown!);
   }
 
   void _handleKeyboardEvent() {

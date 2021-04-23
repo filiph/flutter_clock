@@ -1,12 +1,12 @@
 import 'package:flutter/services.dart' show rootBundle;
 
-List<Fortune> _cache;
+List<Fortune>? _cache;
 
 const maxLines = 5;
 
 Future<List<Fortune>> loadFortunes() async {
   if (_cache != null) {
-    return _cache;
+    return _cache!;
   }
 
   final assets = <Future<String>>[
@@ -51,5 +51,5 @@ Future<List<Fortune>> loadFortunes() async {
 class Fortune {
   final List<String> lines;
 
-  const Fortune(this.lines) : assert(lines != null);
+  const Fortune(this.lines);
 }
